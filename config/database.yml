@@ -17,15 +17,14 @@ default: &default
   encoding: unicode
   host: <%= ENV.fetch("DB_HOST", "localhost") %>
   username: <%= ENV.fetch("DB_USERNAME", "bass_user") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "bass_password") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "") %>
   port: <%= ENV.fetch("DB_PORT", 5432) %>
-  database: <%= ENV.fetch("DB_NAME", "baas") %>
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 
 development:
   <<: *default
-  database: baas_development
+  database: baas
 
 test:
   <<: *default

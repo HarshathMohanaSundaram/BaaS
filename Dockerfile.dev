@@ -1,15 +1,24 @@
 FROM ruby:3.4.11
 
+ARG UID=1000
+ARG GID=1000
+
 RUN apt-get update -qq && \
     apt-get install -y build-essential libpq-dev postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
+RUN groupadd -g $GID app && \
+    useradd -m -u $UID -g $GID app && \
+    mkdir -p /app && \
+    chown -R app:app /app /usr/local/bundle
+
+USER app
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock ./
+COPY --chown=app:app Gemfile Gemfile.lock ./
 RUN bundle install
 
-COPY . .
+COPY --chown=app:app . .
 
 EXPOSE 3000
 CMD ["bin/rails", "server", "-b", "0.0.0.0"]
