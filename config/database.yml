@@ -17,7 +17,7 @@ default: &default
   encoding: unicode
   host: <%= ENV.fetch("DB_HOST", "localhost") %>
   username: <%= ENV.fetch("DB_USERNAME", "bass_user") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "bass_password") %>
   port: <%= ENV.fetch("DB_PORT", 5432) %>
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
