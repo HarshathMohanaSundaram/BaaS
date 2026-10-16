@@ -17,11 +17,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_171058) do
   create_table "organizations", force: :cascade do |t|
     t.string "name", null: false
     t.string "email", null: false
-    t.integer "busineess_type", null: false
+    t.integer "business_type", null: false
     t.integer "currency_type", null: false
     t.integer "last_invoice_number", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_organizations_on_email_unique", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -32,6 +33,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_171058) do
     t.integer "role", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email_unique", unique: true
     t.index ["organization_id"], name: "index_users_on_organization_id"
   end
 
