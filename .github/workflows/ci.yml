@@ -70,7 +70,7 @@ jobs:
 
     services:
       postgres:
-        image: image: postgres:16
+        image: postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -93,4 +93,4 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
-        run: bin/rails db:test:prepare test && bundle exec rspec
+        run: bin/rails db:test:prepare && bundle exec rspec

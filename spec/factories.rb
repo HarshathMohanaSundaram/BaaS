@@ -8,7 +8,7 @@ FactoryBot.define do
 
   factory :user do
     name { "Test User" }
-    email { "test@gmail.com" }
+    sequence(:email) { |n| "user#{n}@example.com" }
     password { "password" }
     association :organization
   end
