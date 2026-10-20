@@ -64,3 +64,9 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+group :development, :test do
+  # Use RSpec for testing
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+end
