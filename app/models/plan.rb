@@ -4,7 +4,7 @@ class Plan < ApplicationRecord
   belongs_to :previous_plan, class_name: 'Plan', primary_key: :id, foreign_key: :previous_plan_id, optional: true
 
   # enums for interval
-  enum interval: { monthly: 1, yearly: 2 }
+  enum :interval, { monthly: 1, yearly: 2 }
 
   # Validations for presence and uniqueness
   validates :name, presence: true
