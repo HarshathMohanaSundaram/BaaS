@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_171058) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_171058) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_organizations_on_email_unique", unique: true
+    t.check_constraint "currency_type = ANY (ARRAY[1, 2, 3])", name: "currency_type_valid"
+  end
+
+  create_table "plans", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.string "name", null: false
+    t.float "amount", null: false
+    t.boolean "per_quantity", default: false, null: false
+    t.string "metric"
+    t.integer "interval", null: false
+    t.integer "version", default: 1, null: false
+    t.bigint "previous_plan_id"
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["archived"], name: "index_plans_on_archived"
+    t.index ["organization_id"], name: "index_plans_on_organization_id"
+    t.check_constraint "\"interval\" = ANY (ARRAY[1, 2])", name: "interval_valid"
+    t.check_constraint "amount >= 0::double precision", name: "amount_non_negative"
+    t.check_constraint "per_quantity = false AND metric IS NULL", name: "per_quantity_metric_null"
+    t.check_constraint "per_quantity = true AND metric IS NOT NULL", name: "per_quantity_metric_not_null"
   end
 
   create_table "users", force: :cascade do |t|
@@ -37,5 +58,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_171058) do
     t.index ["organization_id"], name: "index_users_on_organization_id"
   end
 
+  add_foreign_key "plans", "organizations"
   add_foreign_key "users", "organizations"
 end
