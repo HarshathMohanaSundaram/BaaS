@@ -13,6 +13,6 @@ class CreatePlans < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :plans, [:organization_id, :archived], name: 'index_plans_on_organization_id_and_archived'
+    add_index :plans, [ :organization_id, :archived ], name: 'index_plans_on_organization_id_and_archived'
   end
 end
