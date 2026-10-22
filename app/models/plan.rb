@@ -13,6 +13,16 @@ class Plan < ApplicationRecord
   validates :amount, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :metric, presence: true, if: :per_quantity?
   validates :metric, absence: true, unless: :per_quantity?
+  validate :previous_plan_belongs_to_same_organization
 
   scope :active, -> { where(archived: false) }
+
+  private
+
+  def previous_plan_belongs_to_same_organization
+    return if previous_plan.nil?
+    return if previous_plan.organization_id == organization_id
+
+    errors.add(:previous_plan, "must belong to the same organization")
+  end
 end

@@ -20,11 +20,18 @@ FactoryBot.define do
     interval { :monthly }
     version { 1 }
     archived { false }
-  end
 
-  factory :plan_with_previous_plan, parent: :plan do
-    # need to update the archived to false for previous plan to be inactive
-    association :previous_plan, factory: :plan, archived: true
-    version { plan.previous_plan.version + 1 }
+    trait :per_quantity do
+      per_quantity { true }
+      metric { "api_calls" }
+    end
+
+    # The previous version is archived (inactive) and shares this plan's organization.
+    # Known gap: the DB doesn't enforce same-organization for previous_plan_id;
+    # a composite FK on (organization_id, previous_plan_id) would close it.
+    trait :with_previous_plan do
+      previous_plan { association :plan, organization: organization, archived: true }
+      version { previous_plan.version + 1 }
+    end
   end
 end
