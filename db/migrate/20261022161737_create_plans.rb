@@ -8,7 +8,7 @@ class CreatePlans < ActiveRecord::Migration[8.1]
       t.string :metric
       t.integer :interval, null: false
       t.integer :version, null: false, default: 1
-      t.bigint :previous_plan_id, foreign_key: { to_table: :plans }, index: { name: 'index_plans_on_previous_plan_id' }, unique: true
+      t.references :previous_plan_id, foreign_key: { to_table: :plans }, index: { unique: true, name: 'index_plans_on_previous_plan_id' }
       t.boolean :archived, null: false, default: false
       t.timestamps
     end
