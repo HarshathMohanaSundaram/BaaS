@@ -67,6 +67,18 @@ RSpec.describe Plan, type: :model do
         expect(plan).not_to be_valid
         expect(plan.errors[:metric]).to include("must be blank")
       end
+
+      it "normalizes an empty string to nil so a flat plan saves" do
+        plan.metric = ""
+        expect(plan.metric).to be_nil
+        expect { plan.save! }.not_to raise_error
+      end
+
+      it "normalizes an empty string to nil so a per-quantity plan still requires a metric" do
+        plan = build(:plan, :per_quantity, metric: "")
+        expect(plan).not_to be_valid
+        expect(plan.errors[:metric]).to include("can't be blank")
+      end
     end
 
     describe 'previous_plan' do
@@ -81,6 +93,25 @@ RSpec.describe Plan, type: :model do
         expect(plan).not_to be_valid
         expect(plan.errors[:previous_plan]).to include("must belong to the same organization")
       end
+    end
+  end
+
+  describe 'associations' do
+    it "returns the parent row through previous_plan" do
+      parent = create(:plan, archived: true)
+      plan = create(:plan, organization: parent.organization, previous_plan: parent, version: 2)
+
+      expect(Plan.find(plan.id).previous_plan).to eq(parent)
+    end
+  end
+
+  describe '.active' do
+    it "returns only plans that are not archived" do
+      organization = create(:organization)
+      live = create(:plan, organization: organization)
+      create(:plan, organization: organization, archived: true)
+
+      expect(Plan.active).to contain_exactly(live)
     end
   end
 

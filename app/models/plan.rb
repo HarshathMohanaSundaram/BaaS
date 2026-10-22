@@ -6,6 +6,9 @@ class Plan < ApplicationRecord
   # enums for interval
   enum :interval, { monthly: 1, yearly: 2 }
 
+  # Blank metric becomes nil so it matches the DB check (metric IS NULL for flat plans)
+  normalizes :metric, with: ->(metric) { metric.presence }
+
   # Validations for presence and uniqueness
   validates :name, presence: true
   validates :interval, presence: true
