@@ -34,13 +34,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
     t.string "metric"
     t.integer "interval", null: false
     t.integer "version", default: 1, null: false
-    t.bigint "previous_plan_id_id"
+    t.bigint "previous_plan_id"
     t.boolean "archived", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id", "archived"], name: "index_plans_on_organization_id_and_archived"
     t.index ["organization_id"], name: "index_plans_on_organization_id"
-    t.index ["previous_plan_id_id"], name: "index_plans_on_previous_plan_id", unique: true
+    t.index ["previous_plan_id"], name: "index_plans_on_previous_plan_id", unique: true
     t.check_constraint "\"interval\" = ANY (ARRAY[1, 2])", name: "interval_valid"
     t.check_constraint "amount >= 0", name: "amount_non_negative"
     t.check_constraint "per_quantity = true AND metric IS NOT NULL", name: "per_quantity_metric_not_null"
@@ -59,6 +59,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
   end
 
   add_foreign_key "plans", "organizations"
-  add_foreign_key "plans", "plans", column: "previous_plan_id_id"
+  add_foreign_key "plans", "plans", column: "previous_plan_id"
   add_foreign_key "users", "organizations"
 end

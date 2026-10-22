@@ -8,9 +8,8 @@ class Plan < ApplicationRecord
 
   # Validations for presence and uniqueness
   validates :name, presence: true
-  validates :amount, presence: true
   validates :interval, presence: true
   validates :version, presence: true
-  validates :amount, numericality: { greater_than: 0 }
+  validates :amount, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :metric, presence: true, if: :per_quantity?
 end
