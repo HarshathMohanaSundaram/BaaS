@@ -3,7 +3,7 @@ FactoryBot.define do
     name { "Test Organization" }
     sequence(:email) { |n| "org#{n}@example.com" }
     business_type { 0 }
-    currency_type { 0 }
+    currency_type { :inr }
   end
 
   factory :user do

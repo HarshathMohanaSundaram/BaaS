@@ -1,7 +1,7 @@
 class CreatePlans < ActiveRecord::Migration[8.1]
   def change
     create_table :plans do |t|
-      t.references :organization, null: false, foreign_key: true
+      t.references :organization, null: false, foreign_key: true, index: false
       t.string :name, null: false
       t.integer :amount, null: false
       t.boolean :per_quantity, null: false, default: false

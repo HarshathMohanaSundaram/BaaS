@@ -10,6 +10,7 @@ class Plan < ApplicationRecord
   validates :name, presence: true
   validates :interval, presence: true
   validates :version, presence: true
-  validates :amount, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :amount, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :metric, presence: true, if: :per_quantity?
+  validates :metric, absence: true, unless: :per_quantity?
 end

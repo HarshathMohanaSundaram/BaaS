@@ -39,11 +39,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id", "archived"], name: "index_plans_on_organization_id_and_archived"
-    t.index ["organization_id"], name: "index_plans_on_organization_id"
     t.index ["previous_plan_id"], name: "index_plans_on_previous_plan_id", unique: true
     t.check_constraint "\"interval\" = ANY (ARRAY[1, 2])", name: "interval_valid"
     t.check_constraint "amount >= 0", name: "amount_non_negative"
-    t.check_constraint "per_quantity = true AND metric IS NOT NULL", name: "per_quantity_metric_not_null"
+    t.check_constraint "per_quantity = true AND metric IS NOT NULL OR per_quantity = false AND metric IS NULL", name: "per_quantity_metric_consistency"
   end
 
   create_table "users", force: :cascade do |t|
