@@ -161,7 +161,7 @@ RSpec.describe Plan, type: :model do
 
     it "rejects a nonexistent previous plan" do
       plan.previous_plan_id = -1
-      expect { pplan.save!(validate: false) }.to raise_error(ActiveRecord::InvalidForeignKey)
+      expect { plan.save!(validate: false) }.to raise_error(ActiveRecord::InvalidForeignKey)
     end
 
     it "rejects two plans pointing at the same previous plan" do
