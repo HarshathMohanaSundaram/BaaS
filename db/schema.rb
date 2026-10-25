@@ -39,7 +39,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_135207) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "lineage_key", default: -> { "gen_random_uuid()" }, null: false
-    t.index ["id", "lineage_key"], name: "index_plans_on_organization_id_and_lineage_key", unique: true
+    t.index ["id", "lineage_key"], name: "index_plans_on_id_and_lineage_key", unique: true
     t.index ["id", "organization_id"], name: "index_plans_on_id_and_organization_id", unique: true
     t.index ["organization_id", "archived"], name: "index_plans_on_organization_id_and_archived"
     t.index ["previous_plan_id"], name: "index_plans_on_previous_plan_id", unique: true
@@ -62,5 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_135207) do
 
   add_foreign_key "plans", "organizations"
   add_foreign_key "plans", "plans", column: "previous_plan_id"
+  add_foreign_key "plans", "plans", column: ["previous_plan_id", "lineage_key"], primary_key: ["id", "lineage_key"], name: "fk_plans_previous_plan_same_lineage"
+  add_foreign_key "plans", "plans", column: ["previous_plan_id", "organization_id"], primary_key: ["id", "organization_id"], name: "fk_plans_previous_plan_same_organization"
   add_foreign_key "users", "organizations"
 end

@@ -10,8 +10,8 @@ RSpec.describe Plan::Versioning do
     context 'when only the name is changed' do
       let(:params) { { name: "Starter Plus" } }
 
-      it "updates the plan in place" do
-        expect(execute).to be(true)
+      it "updates the plan in place and returns it" do
+        expect(execute).to eq(plan)
         expect(plan.reload.name).to eq("Starter Plus")
       end
 
@@ -28,9 +28,8 @@ RSpec.describe Plan::Versioning do
     context 'when nothing is changed' do
       let(:params) { { name: "Starter", amount: 1000, interval: "monthly" } }
 
-      it "does not create a new version" do
-        expect { execute }.not_to change(Plan, :count)
-        expect(execute).to be(true)
+      it "returns the plan without creating a new version" do
+        expect { expect(execute).to eq(plan) }.not_to change(Plan, :count)
       end
 
       it "compares type-cast values, so string params matching the current values are not a change" do
@@ -38,13 +37,85 @@ RSpec.describe Plan::Versioning do
       end
     end
 
-    context 'when the name update is invalid' do
-      let(:params) { { name: "" } }
+    context 'when params use string keys' do
+      let(:params) { { "amount" => 2000 } }
 
-      it "returns false with errors and does not create a new version" do
-        expect { expect(execute).to be(false) }.not_to change(Plan, :count)
-        expect(plan.errors[:name]).to include("can't be blank")
-        expect(plan.reload.name).to eq("Starter")
+      it "treats them the same as symbol keys" do
+        expect(execute).to have_attributes(amount: 2000, version: 2)
+      end
+    end
+
+    describe 'invalid params' do
+      shared_examples 'rejected as invalid' do |attribute, message|
+        it "raises InvalidRecordError with the error on the plan" do
+          expect { execute }.to raise_error(InvalidRecordError) { |error|
+            expect(error.record).to eq(plan)
+            expect(error.record.errors[attribute]).to include(message)
+          }
+        end
+
+        it "writes nothing" do
+          expect { execute rescue nil }.not_to change(Plan, :count)
+          expect(plan.reload).to have_attributes(name: "Starter", amount: 1000, version: 1, archived: false)
+        end
+      end
+
+      context 'when the name is blank (an in-place change)' do
+        let(:params) { { name: "" } }
+
+        include_examples 'rejected as invalid', :name, "can't be blank"
+      end
+
+      context 'when the amount is negative (a versioned change)' do
+        let(:params) { { amount: -1 } }
+
+        include_examples 'rejected as invalid', :amount, "must be greater than or equal to 0"
+      end
+
+      context 'when per_quantity is set without a metric' do
+        let(:params) { { per_quantity: true } }
+
+        include_examples 'rejected as invalid', :metric, "can't be blank"
+      end
+    end
+
+    describe 'non-editable attributes' do
+      let(:other_organization) { create(:organization) }
+
+      {
+        archived: true,
+        version: 5,
+        previous_plan_id: 1,
+        lineage_key: SecureRandom.uuid,
+        id: 999
+      }.each do |attribute, value|
+        context "when params include #{attribute}" do
+          let(:params) { { amount: 2000, attribute => value } }
+
+          it "raises InvalidRecordError and writes nothing" do
+            expect { execute }.to raise_error(InvalidRecordError) { |error|
+              expect(error.record.errors[:base]).to include("#{attribute} cannot be changed")
+            }
+            expect(Plan.count).to eq(1)
+            expect(plan.reload).to have_attributes(amount: 1000, version: 1, archived: false)
+          end
+        end
+      end
+
+      context 'when params include organization_id' do
+        let(:params) { { organization_id: other_organization.id } }
+
+        it "raises InvalidRecordError and leaves the plan in its organization" do
+          expect { execute }.to raise_error(InvalidRecordError, /organization_id cannot be changed/)
+          expect(plan.reload.organization_id).to eq(organization.id)
+        end
+      end
+
+      it "lists every non-editable attribute" do
+        expect { described_class.new(plan, { archived: true, version: 5 }).execute }
+          .to raise_error(InvalidRecordError) { |error|
+            expect(error.record.errors[:base]).to contain_exactly("archived cannot be changed", "version cannot be changed")
+          }
       end
     end
 
@@ -59,6 +130,7 @@ RSpec.describe Plan::Versioning do
         new_plan = execute
 
         expect(new_plan).to be_persisted
+        expect(new_plan).not_to eq(plan)
         expect(new_plan).to have_attributes(
           amount: 2000,
           name: "Starter",
@@ -71,14 +143,14 @@ RSpec.describe Plan::Versioning do
         )
       end
 
-      it "keeps the lineage key on the archived old plan" do
-        expect { execute }.not_to change { plan.reload.lineage_key }
-      end
-
       it "archives the old plan and keeps its original attributes" do
         execute
 
         expect(plan.reload).to have_attributes(archived: true, amount: 1000, version: 1)
+      end
+
+      it "keeps the lineage key on the archived old plan" do
+        expect { execute }.not_to change { plan.reload.lineage_key }
       end
 
       it "leaves only the new plan active" do
@@ -144,28 +216,6 @@ RSpec.describe Plan::Versioning do
       end
     end
 
-    context 'when params try to change the lineage key' do
-      let(:other_lineage_key) { SecureRandom.uuid }
-
-      it "ignores it on a versioned change" do
-        new_plan = described_class.new(plan, { amount: 2000, lineage_key: other_lineage_key }).execute
-
-        expect(new_plan).to have_attributes(amount: 2000, version: 2, lineage_key: plan.lineage_key)
-        expect(plan.reload.lineage_key).not_to eq(other_lineage_key)
-      end
-
-      it "ignores it on a name-only change" do
-        expect(described_class.new(plan, { name: "Starter Plus", lineage_key: other_lineage_key }).execute).to be(true)
-        expect(plan.reload).to have_attributes(name: "Starter Plus", lineage_key: plan.lineage_key)
-        expect(plan.lineage_key).not_to eq(other_lineage_key)
-      end
-
-      it "does not create a new version when it is the only change" do
-        expect { described_class.new(plan, { lineage_key: other_lineage_key }).execute }.not_to change(Plan, :count)
-        expect(plan.reload.lineage_key).not_to eq(other_lineage_key)
-      end
-    end
-
     context 'when plans are created independently' do
       it "gives each its own lineage key" do
         other_plan = create(:plan, organization: organization)
@@ -179,18 +229,17 @@ RSpec.describe Plan::Versioning do
       let!(:plan) { create(:plan, organization: organization, archived: true) }
       let(:params) { { amount: 2000 } }
 
-      it "returns false with an error" do
-        expect(execute).to be(false)
-        expect(plan.errors[:base]).to include("has been archived and can no longer be updated")
+      it "raises ConflictError" do
+        expect { execute }.to raise_error(ConflictError, "Plan has been archived and can no longer be updated")
       end
 
       it "does not create a new version or change the plan" do
-        expect { execute }.not_to change(Plan, :count)
+        expect { execute rescue nil }.not_to change(Plan, :count)
         expect(plan.reload).to have_attributes(amount: 1000, archived: true)
       end
 
       it "rejects name-only updates too" do
-        expect(described_class.new(plan, { name: "Renamed" }).execute).to be(false)
+        expect { described_class.new(plan, { name: "Renamed" }).execute }.to raise_error(ConflictError)
         expect(plan.reload.name).to eq("Test Plan")
       end
     end
@@ -198,23 +247,27 @@ RSpec.describe Plan::Versioning do
     context 'when the in-memory plan is stale and was archived by another request' do
       let(:params) { { amount: 3000 } }
 
-      it "sees the archived state after locking and rejects the update" do
+      it "sees the archived state after locking and raises ConflictError" do
         stale_plan = Plan.find(plan.id)
         described_class.new(plan, { amount: 2000 }).execute
 
-        expect { expect(described_class.new(stale_plan, params).execute).to be(false) }.not_to change(Plan, :count)
-        expect(stale_plan.errors[:base]).to include("has been archived and can no longer be updated")
+        expect { described_class.new(stale_plan, params).execute }.to raise_error(ConflictError)
+        expect(Plan.count).to eq(2)
       end
     end
 
-    context 'when the new plan fails to save' do
-      let(:params) { { amount: -1 } }
+    # The lock and the archived check should stop this from happening; the unique index on previous_plan_id is the backstop.
+    context 'when another version already points at the plan' do
+      let(:params) { { amount: 2000 } }
 
-      it "raises and rolls back archiving the old plan" do
-        expect { execute }.to raise_error(ActiveRecord::RecordInvalid)
+      before do
+        create(:plan, organization: organization, previous_plan: plan, lineage_key: plan.lineage_key, version: 2)
+      end
 
-        expect(Plan.count).to eq(1)
-        expect(plan.reload).to have_attributes(archived: false, amount: 1000, version: 1)
+      it "converts the unique violation into ConflictError and rolls back archiving" do
+        expect { execute }.to raise_error(ConflictError, "Plan has already been versioned")
+        expect(plan.reload).to have_attributes(archived: false, amount: 1000)
+        expect(Plan.count).to eq(2)
       end
     end
 
@@ -239,7 +292,8 @@ RSpec.describe Plan::Versioning do
   describe 'concurrent requests' do
     self.use_transactional_tests = false
 
-    let(:thread_count) { 4 }
+    # one connection per thread, plus the one the main thread holds for setup and assertions
+    let(:thread_count) { ActiveRecord::Base.connection_pool.size - 1 }
 
     after do
       Plan.where(organization_id: organization.id).delete_all
@@ -258,6 +312,8 @@ RSpec.describe Plan::Versioning do
             ready << true
             go.pop
             described_class.new(plan_copy, params_for.call(i)).execute
+          rescue ConflictError => error
+            error
           end
         end
       end
@@ -272,7 +328,7 @@ RSpec.describe Plan::Versioning do
 
       new_plans = results.grep(Plan)
       expect(new_plans.size).to eq(1)
-      expect(results.count(false)).to eq(thread_count - 1)
+      expect(results.grep(ConflictError).size).to eq(thread_count - 1)
 
       versions = Plan.where(organization_id: organization.id)
       expect(versions.count).to eq(2)
@@ -284,7 +340,7 @@ RSpec.describe Plan::Versioning do
     it "applies every name-only update without creating new versions" do
       results = run_concurrently(->(i) { { name: "Name #{i}" } })
 
-      expect(results).to all(be(true))
+      expect(results).to all(eq(plan))
       expect(Plan.where(organization_id: organization.id).count).to eq(1)
       expect(plan.reload.name).to match(/\AName \d\z/)
     end

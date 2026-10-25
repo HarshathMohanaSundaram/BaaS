@@ -3,6 +3,9 @@ class Plan < ApplicationRecord
   belongs_to :organization
   belongs_to :previous_plan, class_name: "Plan", primary_key: :id, foreign_key: :previous_plan_id, optional: true
 
+  # every version of a plan shares the lineage key it was created with; assigning it on a saved plan raises
+  attr_readonly :lineage_key
+
   # enums for interval
   enum :interval, { monthly: 1, yearly: 2 }
 
