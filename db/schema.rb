@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_25_135207) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_162212) do
     t.boolean "archived", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "lineage_key", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["id", "lineage_key"], name: "index_plans_on_organization_id_and_lineage_key", unique: true
+    t.index ["id", "organization_id"], name: "index_plans_on_id_and_organization_id", unique: true
     t.index ["organization_id", "archived"], name: "index_plans_on_organization_id_and_archived"
     t.index ["previous_plan_id"], name: "index_plans_on_previous_plan_id", unique: true
     t.check_constraint "\"interval\" = ANY (ARRAY[1, 2])", name: "interval_valid"
