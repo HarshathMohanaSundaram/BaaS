@@ -1,6 +1,8 @@
 class Plan::Versioning
   # attributes that can be updated in place without creating a new version
   NON_VERSIONED_ATTRIBUTES = %w[name].freeze
+  # attributes shared by every version of a plan; changes to them in params are ignored
+  IMMUTABLE_ATTRIBUTES = %w[lineage_key].freeze
 
   attr_accessor :plan, :params
 
@@ -23,6 +25,7 @@ class Plan::Versioning
 
       # assign first so dirty tracking compares type-cast values (e.g. "100" vs 100, "monthly" vs 1)
       plan.assign_attributes(params)
+      plan.restore_attributes(IMMUTABLE_ATTRIBUTES)
 
       if versioned_attributes_changed?
         create_new_version
@@ -44,6 +47,7 @@ class Plan::Versioning
     new_plan = plan.dup
     new_plan.version = plan.version + 1
     new_plan.previous_plan_id = plan.id
+    new_plan.lineage_key = plan.lineage_key
     new_plan.archived = false
 
     plan.restore_attributes

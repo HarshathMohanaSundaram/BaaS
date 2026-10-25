@@ -32,6 +32,7 @@ FactoryBot.define do
     trait :with_previous_plan do
       previous_plan { association :plan, organization: organization, archived: true }
       version { previous_plan.version + 1 }
+      lineage_key { previous_plan.lineage_key }
     end
   end
 end

@@ -19,6 +19,10 @@ RSpec.describe Plan::Versioning do
         expect { execute }.not_to change(Plan, :count)
         expect(plan.reload).to have_attributes(version: 1, archived: false)
       end
+
+      it "keeps the lineage key" do
+        expect { execute }.not_to change { plan.reload.lineage_key }
+      end
     end
 
     context 'when nothing is changed' do
@@ -62,8 +66,13 @@ RSpec.describe Plan::Versioning do
           organization_id: organization.id,
           version: 2,
           previous_plan_id: plan.id,
+          lineage_key: plan.lineage_key,
           archived: false
         )
+      end
+
+      it "keeps the lineage key on the archived old plan" do
+        expect { execute }.not_to change { plan.reload.lineage_key }
       end
 
       it "archives the old plan and keeps its original attributes" do
@@ -126,6 +135,43 @@ RSpec.describe Plan::Versioning do
         new_plan = execute
 
         expect(new_plan).to have_attributes(version: plan.version + 1, previous_plan_id: plan.id)
+      end
+
+      it "shares one lineage key across every version" do
+        new_plan = execute
+
+        expect([plan.previous_plan, plan, new_plan].map(&:lineage_key).uniq).to eq([plan.lineage_key])
+      end
+    end
+
+    context 'when params try to change the lineage key' do
+      let(:other_lineage_key) { SecureRandom.uuid }
+
+      it "ignores it on a versioned change" do
+        new_plan = described_class.new(plan, { amount: 2000, lineage_key: other_lineage_key }).execute
+
+        expect(new_plan).to have_attributes(amount: 2000, version: 2, lineage_key: plan.lineage_key)
+        expect(plan.reload.lineage_key).not_to eq(other_lineage_key)
+      end
+
+      it "ignores it on a name-only change" do
+        expect(described_class.new(plan, { name: "Starter Plus", lineage_key: other_lineage_key }).execute).to be(true)
+        expect(plan.reload).to have_attributes(name: "Starter Plus", lineage_key: plan.lineage_key)
+        expect(plan.lineage_key).not_to eq(other_lineage_key)
+      end
+
+      it "does not create a new version when it is the only change" do
+        expect { described_class.new(plan, { lineage_key: other_lineage_key }).execute }.not_to change(Plan, :count)
+        expect(plan.reload.lineage_key).not_to eq(other_lineage_key)
+      end
+    end
+
+    context 'when plans are created independently' do
+      it "gives each its own lineage key" do
+        other_plan = create(:plan, organization: organization)
+
+        expect(other_plan.lineage_key).to be_present
+        expect(other_plan.lineage_key).not_to eq(plan.lineage_key)
       end
     end
 
@@ -231,6 +277,7 @@ RSpec.describe Plan::Versioning do
       versions = Plan.where(organization_id: organization.id)
       expect(versions.count).to eq(2)
       expect(versions.active.sole).to have_attributes(id: new_plans.first.id, version: 2, previous_plan_id: plan.id)
+      expect(versions.pluck(:lineage_key).uniq).to eq([plan.lineage_key])
       expect(plan.reload).to be_archived
     end
 
