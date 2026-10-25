@@ -26,12 +26,12 @@ FactoryBot.define do
       metric { "api_calls" }
     end
 
-    # The previous version is archived (inactive) and shares this plan's organization.
-    # Known gap: the DB doesn't enforce same-organization for previous_plan_id;
-    # a composite FK on (organization_id, previous_plan_id) would close it.
+    # The previous version is archived (inactive) and shares this plan's organization and lineage key,
+    # which the composite FKs on (previous_plan_id, organization_id) and (previous_plan_id, lineage_key) require.
     trait :with_previous_plan do
       previous_plan { association :plan, organization: organization, archived: true }
       version { previous_plan.version + 1 }
+      lineage_key { previous_plan.lineage_key }
     end
   end
 end
