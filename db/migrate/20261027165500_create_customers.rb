@@ -12,7 +12,7 @@ class CreateCustomers < ActiveRecord::Migration[8.1]
     end
 
     add_index :customers, [:organization_id, :external_id], unique: true, name: 'index_customers_on_organization_and_external_id'
-add_index :customers, :stripe_customer_id, unique: true, name: 'index_customers_on_stripe_customer_id'
+  add_index :customers, :stripe_customer_id, unique: true, name: 'index_customers_on_stripe_customer_id'
     add_foreign_key :customers, :users, column: [:account_manager_id,:organization_id], primary_key: [:id,:organization_id], name: 'fk_customers_account_manager'
     add_index :customers, [:id, :organization_id], unique: true, name: 'index_customers_on_id_and_organization_id'
   end
