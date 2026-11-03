@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_165624) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_175420) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,9 +26,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_165624) do
     t.datetime "updated_at", null: false
     t.index ["digest"], name: "index_api_keys_on_digest", unique: true
     t.index ["organization_id"], name: "index_api_keys_on_organization_id"
-    t.index ["prefix"], name: "index_api_keys_on_prefix", unique: true
+    t.index ["prefix"], name: "index_api_keys_on_prefix"
     t.index ["user_id"], name: "index_api_keys_on_user_id"
+    t.check_constraint "digest::text <> ''::text", name: "check_api_keys_digest_not_empty"
     t.check_constraint "name::text <> ''::text", name: "check_api_keys_name_not_empty"
+    t.check_constraint "prefix::text <> ''::text", name: "check_api_keys_prefix_not_empty"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -41,11 +43,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_165624) do
     t.integer "payment_type", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["account_manager_id", "organization_id"], name: "index_customers_on_account_manager"
     t.index ["id", "organization_id"], name: "index_customers_on_id_and_organization_id", unique: true
     t.index ["organization_id", "external_id"], name: "index_customers_on_organization_and_external_id", unique: true
     t.index ["stripe_customer_id"], name: "index_customers_on_stripe_customer_id", unique: true
     t.check_constraint "external_id::text <> ''::text", name: "check_customers_external_id_not_empty"
-    t.check_constraint "payment_type = ANY (ARRAY[0, 1, 2])", name: "check_customers_payment_type_valid"
+    t.check_constraint "payment_type = ANY (ARRAY[0, 1, 2, 3])", name: "check_customers_payment_type_valid"
   end
 
   create_table "organizations", force: :cascade do |t|

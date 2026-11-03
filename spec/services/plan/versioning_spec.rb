@@ -212,7 +212,7 @@ RSpec.describe Plan::Versioning do
       it "shares one lineage key across every version" do
         new_plan = execute
 
-        expect([plan.previous_plan, plan, new_plan].map(&:lineage_key).uniq).to eq([plan.lineage_key])
+        expect([ plan.previous_plan, plan, new_plan ].map(&:lineage_key).uniq).to eq([ plan.lineage_key ])
       end
     end
 
@@ -333,7 +333,7 @@ RSpec.describe Plan::Versioning do
       versions = Plan.where(organization_id: organization.id)
       expect(versions.count).to eq(2)
       expect(versions.active.sole).to have_attributes(id: new_plans.first.id, version: 2, previous_plan_id: plan.id)
-      expect(versions.pluck(:lineage_key).uniq).to eq([plan.lineage_key])
+      expect(versions.pluck(:lineage_key).uniq).to eq([ plan.lineage_key ])
       expect(plan.reload).to be_archived
     end
 

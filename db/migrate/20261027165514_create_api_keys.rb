@@ -11,7 +11,7 @@ class CreateApiKeys < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :api_keys, :prefix, unique: true, name: 'index_api_keys_on_prefix'
+    add_index :api_keys, :prefix, name: 'index_api_keys_on_prefix'
     add_index :api_keys, :digest, unique: true, name: 'index_api_keys_on_digest'
   end
 end
