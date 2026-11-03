@@ -1,4 +1,18 @@
 FactoryBot.define do
+  factory :api_key do
+    association :organization
+    user { association :user, organization: organization }
+    name { "Test API Key" }
+  end
+
+  factory :customer do
+    association :organization
+    name { "Test Customer" }
+    sequence(:email) { |n| "customer#{n}@example.com" }
+    sequence(:external_id) { |n| "cus_#{n}" }
+    payment_type { :credit_card }
+  end
+
   factory :organization do
     name { "Test Organization" }
     sequence(:email) { |n| "org#{n}@example.com" }

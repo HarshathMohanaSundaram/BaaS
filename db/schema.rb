@@ -10,9 +10,46 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_25_135207) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_175420) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "api_keys", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "user_id", null: false
+    t.string "prefix", null: false
+    t.string "digest", null: false
+    t.string "name", null: false
+    t.datetime "last_used_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["digest"], name: "index_api_keys_on_digest", unique: true
+    t.index ["organization_id"], name: "index_api_keys_on_organization_id"
+    t.index ["prefix"], name: "index_api_keys_on_prefix"
+    t.index ["user_id"], name: "index_api_keys_on_user_id"
+    t.check_constraint "digest::text <> ''::text", name: "check_api_keys_digest_not_empty"
+    t.check_constraint "name::text <> ''::text", name: "check_api_keys_name_not_empty"
+    t.check_constraint "prefix::text <> ''::text", name: "check_api_keys_prefix_not_empty"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "account_manager_id"
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "external_id", null: false
+    t.string "stripe_customer_id"
+    t.integer "payment_type", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_manager_id", "organization_id"], name: "index_customers_on_account_manager"
+    t.index ["id", "organization_id"], name: "index_customers_on_id_and_organization_id", unique: true
+    t.index ["organization_id", "external_id"], name: "index_customers_on_organization_and_external_id", unique: true
+    t.index ["stripe_customer_id"], name: "index_customers_on_stripe_customer_id", unique: true
+    t.check_constraint "external_id::text <> ''::text", name: "check_customers_external_id_not_empty"
+    t.check_constraint "payment_type = ANY (ARRAY[0, 1, 2, 3])", name: "check_customers_payment_type_valid"
+  end
 
   create_table "organizations", force: :cascade do |t|
     t.string "name", null: false
@@ -57,9 +94,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_135207) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email_unique", unique: true
-    t.index ["organization_id"], name: "index_users_on_organization_id"
+    t.index ["organization_id", "id"], name: "index_users_on_organization_and_id", unique: true
   end
 
+  add_foreign_key "api_keys", "organizations"
+  add_foreign_key "api_keys", "users"
+  add_foreign_key "customers", "organizations"
+  add_foreign_key "customers", "users", column: ["account_manager_id", "organization_id"], primary_key: ["id", "organization_id"], name: "fk_customers_account_manager"
   add_foreign_key "plans", "organizations"
   add_foreign_key "plans", "plans", column: "previous_plan_id"
   add_foreign_key "plans", "plans", column: ["previous_plan_id", "lineage_key"], primary_key: ["id", "lineage_key"], name: "fk_plans_previous_plan_same_lineage"
