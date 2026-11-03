@@ -26,9 +26,23 @@ RSpec.describe ApiKey, type: :model do
       expect(api_key.errors[:organization]).to include("must exist")
     end
 
-    it "does not require a user at the model level" do
+    it "requires a user" do
       api_key.user = nil
-      expect(api_key).to be_valid
+      expect(api_key).not_to be_valid
+      expect(api_key.errors[:user]).to include("must exist")
+    end
+
+    describe 'user' do
+      it "is valid with a user from the same organization" do
+        api_key.user = create(:user, organization: api_key.organization)
+        expect(api_key).to be_valid
+      end
+
+      it "is invalid with a user from another organization" do
+        api_key.user = create(:user)
+        expect(api_key).not_to be_valid
+        expect(api_key.errors[:user]).to include("must belong to the same organization")
+      end
     end
 
     # On create the key is regenerated before validation, so these are only reachable on a saved key.
@@ -59,18 +73,24 @@ RSpec.describe ApiKey, type: :model do
   describe 'key generation' do
     let(:api_key) { create(:api_key) }
 
-    it "builds the prefix from the organization id and a random suffix" do
-      expect(api_key.prefix).to match(/\Apk_#{api_key.organization_id}_[a-z0-9]{8}\z/)
+    it "builds a random-only prefix" do
+      expect(api_key.prefix).to match(/\Apk_[a-z0-9]{8}\z/)
     end
 
-    it "exposes the plaintext key as the prefix and secret joined by a dot" do
-      expect(api_key.api_key).to start_with("#{api_key.prefix}.")
+    it "does not expose the organization id in the prefix" do
+      expect(api_key.prefix.split("_")).not_to include(api_key.organization_id.to_s)
     end
 
-    it "stores the SHA-256 digest of the secret, not the secret itself" do
-      secret = api_key.api_key.delete_prefix("#{api_key.prefix}.")
-      expect(api_key.digest).to eq(Digest::SHA256.hexdigest(secret))
-      expect(ApiKey.find(api_key.id).api_key).to be_nil
+    it "exposes the plaintext token as the prefix and secret joined by a dot" do
+      expect(api_key.token).to match(/\A#{api_key.prefix}\.[A-Za-z0-9_-]{32}\z/)
+    end
+
+    it "stores the SHA-256 digest of the full token, prefix included" do
+      expect(api_key.digest).to eq(Digest::SHA256.hexdigest(api_key.token))
+    end
+
+    it "does not store the plaintext token" do
+      expect(ApiKey.find(api_key.id).token).to be_nil
     end
 
     it "overwrites a prefix and digest supplied by the caller" do
@@ -87,6 +107,30 @@ RSpec.describe ApiKey, type: :model do
 
     it "does not regenerate the key on update" do
       expect { api_key.update!(name: "Renamed") }.not_to(change { [api_key.prefix, api_key.digest] })
+    end
+  end
+
+  describe '.find_by_token' do
+    let!(:api_key) { create(:api_key) }
+
+    it "finds the key by its token" do
+      expect(ApiKey.find_by_token(api_key.token)).to eq(api_key)
+    end
+
+    it "returns nil for an unknown token" do
+      expect(ApiKey.find_by_token("pk_unknown1.#{SecureRandom.urlsafe_base64(24)}")).to be_nil
+    end
+
+    it "returns nil for a blank token" do
+      expect(ApiKey.find_by_token(nil)).to be_nil
+      expect(ApiKey.find_by_token("")).to be_nil
+    end
+
+    it "rejects a valid secret paired with another key's prefix" do
+      other = create(:api_key)
+      secret = api_key.token.delete_prefix("#{api_key.prefix}.")
+
+      expect(ApiKey.find_by_token("#{other.prefix}.#{secret}")).to be_nil
     end
   end
 
