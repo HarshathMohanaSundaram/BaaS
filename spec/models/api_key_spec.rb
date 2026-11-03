@@ -106,7 +106,7 @@ RSpec.describe ApiKey, type: :model do
     end
 
     it "does not regenerate the key on update" do
-      expect { api_key.update!(name: "Renamed") }.not_to(change { [api_key.prefix, api_key.digest] })
+      expect { api_key.update!(name: "Renamed") }.not_to(change { [ api_key.prefix, api_key.digest ] })
     end
   end
 
@@ -203,19 +203,19 @@ RSpec.describe ApiKey, type: :model do
     let(:indexes) { ApiKey.connection.indexes(:api_keys).index_by(&:name) }
 
     it "has a unique index on digest" do
-      expect(indexes["index_api_keys_on_digest"]).to have_attributes(columns: ["digest"], unique: true)
+      expect(indexes["index_api_keys_on_digest"]).to have_attributes(columns: [ "digest" ], unique: true)
     end
 
     it "has a non-unique index on prefix" do
-      expect(indexes["index_api_keys_on_prefix"]).to have_attributes(columns: ["prefix"], unique: false)
+      expect(indexes["index_api_keys_on_prefix"]).to have_attributes(columns: [ "prefix" ], unique: false)
     end
 
     it "has a non-unique index on organization_id" do
-      expect(indexes["index_api_keys_on_organization_id"]).to have_attributes(columns: ["organization_id"], unique: false)
+      expect(indexes["index_api_keys_on_organization_id"]).to have_attributes(columns: [ "organization_id" ], unique: false)
     end
 
     it "has a non-unique index on user_id" do
-      expect(indexes["index_api_keys_on_user_id"]).to have_attributes(columns: ["user_id"], unique: false)
+      expect(indexes["index_api_keys_on_user_id"]).to have_attributes(columns: [ "user_id" ], unique: false)
     end
   end
 end

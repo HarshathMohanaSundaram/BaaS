@@ -255,7 +255,7 @@ RSpec.describe Customer, type: :model do
       end
 
       it "has a unique index on stripe_customer_id" do
-        expect(indexes["index_customers_on_stripe_customer_id"]).to have_attributes(columns: ["stripe_customer_id"], unique: true)
+        expect(indexes["index_customers_on_stripe_customer_id"]).to have_attributes(columns: [ "stripe_customer_id" ], unique: true)
       end
 
       it "has a non-unique index on (account_manager_id, organization_id) covering the account manager FK" do
