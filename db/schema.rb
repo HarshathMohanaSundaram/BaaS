@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_175420) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_135220) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -85,6 +85,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_175420) do
     t.check_constraint "per_quantity = true AND metric IS NOT NULL OR per_quantity = false AND metric IS NULL", name: "per_quantity_metric_consistency"
   end
 
+  create_table "subscriptions", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "plan_id", null: false
+    t.integer "status", null: false
+    t.datetime "current_period_start", null: false
+    t.datetime "current_period_end", null: false
+    t.datetime "trial_ends_at"
+    t.boolean "cancel_at_period_end", default: false, null: false
+    t.datetime "canceled_at"
+    t.uuid "lineage_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "lineage_key"], name: "index_live_unique_subscriptions_on_customer_id_and_lineage_key", unique: true, where: "(status = ANY (ARRAY[1, 2, 3]))"
+    t.index ["customer_id", "organization_id"], name: "index_subscriptions_on_customer_id_and_organization_id"
+    t.index ["organization_id"], name: "index_subscriptions_on_organization_id"
+    t.index ["plan_id", "organization_id"], name: "index_subscriptions_on_plan_id_and_organization_id"
+    t.check_constraint "\nCASE\n    WHEN status = 4 AND canceled_at IS NOT NULL THEN true\n    WHEN status <> 4 AND canceled_at IS NULL THEN true\n    ELSE false\nEND = true", name: "check_canceled_at_status_consistency"
+    t.check_constraint "current_period_end > current_period_start", name: "check_current_period_end_after_start"
+    t.check_constraint "status = ANY (ARRAY[1, 2, 3, 4])", name: "check_status_enum"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email", null: false
@@ -105,5 +127,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_175420) do
   add_foreign_key "plans", "plans", column: "previous_plan_id"
   add_foreign_key "plans", "plans", column: ["previous_plan_id", "lineage_key"], primary_key: ["id", "lineage_key"], name: "fk_plans_previous_plan_same_lineage"
   add_foreign_key "plans", "plans", column: ["previous_plan_id", "organization_id"], primary_key: ["id", "organization_id"], name: "fk_plans_previous_plan_same_organization"
+  add_foreign_key "subscriptions", "customers", column: ["customer_id", "organization_id"], primary_key: ["id", "organization_id"], name: "fk_subscriptions_customer"
+  add_foreign_key "subscriptions", "organizations"
+  add_foreign_key "subscriptions", "plans", column: ["plan_id", "lineage_key"], primary_key: ["id", "lineage_key"], name: "fk_subscriptions_plan_lineage"
+  add_foreign_key "subscriptions", "plans", column: ["plan_id", "organization_id"], primary_key: ["id", "organization_id"], name: "fk_subscriptions_plan_organization"
   add_foreign_key "users", "organizations"
 end
