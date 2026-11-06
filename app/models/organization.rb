@@ -1,6 +1,8 @@
 class Organization < ApplicationRecord
   has_many :users
   has_many :plans
+  has_many :customers
+  has_many :subscriptions, dependent: :restrict_with_error
 
 
   enum :currency_type, { inr: 1, usd: 2, eur: 3 }

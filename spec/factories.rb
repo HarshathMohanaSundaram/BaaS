@@ -1,4 +1,30 @@
 FactoryBot.define do
+  factory :subscription do
+    # Created even under build: the plan's lineage_key comes from a DB default, and
+    # organization_id must be set before the organization consistency validations compare it.
+    organization { association :organization, strategy: :create }
+    plan { association :plan, organization: organization, strategy: :create }
+    customer { association :customer, organization: organization, strategy: :create }
+    lineage_key { plan.lineage_key }
+    status { :active }
+    current_period_start { Time.current }
+    current_period_end { 1.month.from_now }
+
+    trait :trialing do
+      status { :trialing }
+      trial_ends_at { 14.days.from_now }
+    end
+
+    trait :past_due do
+      status { :past_due }
+    end
+
+    trait :canceled do
+      status { :canceled }
+      canceled_at { Time.current }
+    end
+  end
+
   factory :api_key do
     association :organization
     user { association :user, organization: organization }

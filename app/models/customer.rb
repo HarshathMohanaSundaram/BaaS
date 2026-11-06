@@ -3,6 +3,7 @@ class Customer < ApplicationRecord
   # Keyed on account_manager_id alone: a composite key would make assigning a manager overwrite organization_id.
   # The composite FK in the database (fk_customers_account_manager) still enforces the same-organization rule.
   belongs_to :account_manager, class_name: "User", foreign_key: :account_manager_id, optional: true
+  has_many :subscriptions, dependent: :restrict_with_error
 
   validates :name, :email, :payment_type, presence: true
   validates :external_id, presence: true, uniqueness: { scope: :organization_id }
