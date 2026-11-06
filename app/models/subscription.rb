@@ -26,7 +26,7 @@ class Subscription < ApplicationRecord
   private
 
   def lineage_key_belongs_to_plan
-    return if plan.nil? || plan.lineage_key == lineage_key
+    return if plan.nil? || lineage_key.blank? || plan.lineage_key == lineage_key
 
     errors.add(:lineage_key, "must match the plan's lineage key")
   end

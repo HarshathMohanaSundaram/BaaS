@@ -77,8 +77,9 @@ or to the period.
 
 ### Deletion
 
-Foreign keys block deleting an organization, customer or plan that has subscriptions. `Customer` and
-`Plan` also declare `dependent: :restrict_with_error`, so `destroy` returns `false` with an error.
+Foreign keys block deleting an organization, customer or plan that has subscriptions. `Organization`,
+`Customer` and `Plan` also declare `dependent: :restrict_with_error`, so `destroy` returns `false` with an
+error.
 
 ## Known gaps
 
@@ -87,5 +88,3 @@ Foreign keys block deleting an organization, customer or plan that has subscript
 - **Losing the uniqueness race:** nothing rescues `ActiveRecord::RecordNotUnique` from the live index yet,
   so the losing request gets a raw exception. The service that creates subscriptions should translate it
   to `ConflictError`, as `Plan::Versioning` does for its unique index.
-- **Destroying an organization:** `Organization has_many :subscriptions` has no `dependent:` option, so
-  `destroy` raises `ActiveRecord::InvalidForeignKey` when subscriptions exist instead of returning `false`.

@@ -22,6 +22,12 @@ RSpec.describe Subscription, type: :model do
       end
     end
 
+    it "reports only the blank error for a nil lineage_key, not a plan mismatch as well" do
+      subscription.lineage_key = nil
+      subscription.valid?
+      expect(subscription.errors[:lineage_key]).to contain_exactly("can't be blank")
+    end
+
     %i[organization plan customer].each do |association|
       it "requires #{association}" do
         subscription.public_send("#{association}=", nil)
@@ -236,6 +242,11 @@ RSpec.describe Subscription, type: :model do
     it "stops a customer with subscriptions from being destroyed" do
       expect(subscription.customer.destroy).to be(false)
       expect(Customer.exists?(subscription.customer_id)).to be(true)
+    end
+
+    it "stops an organization with subscriptions from being destroyed" do
+      expect(subscription.organization.destroy).to be(false)
+      expect(Organization.exists?(subscription.organization_id)).to be(true)
     end
   end
 
