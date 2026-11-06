@@ -2,6 +2,7 @@ class Plan < ApplicationRecord
   # Associations belongs to a organization and previous_plan mapping previous plan
   belongs_to :organization
   belongs_to :previous_plan, class_name: "Plan", primary_key: :id, foreign_key: :previous_plan_id, optional: true
+  has_many :subscriptions, dependent: :restrict_with_error
 
   # every version of a plan shares the lineage key it was created with; assigning it on a saved plan raises
   attr_readonly :lineage_key
@@ -22,6 +23,10 @@ class Plan < ApplicationRecord
   validate :previous_plan_belongs_to_same_organization
 
   scope :active, -> { where(archived: false) }
+
+  def live?
+    !archived
+  end
 
   private
 
