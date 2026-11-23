@@ -69,6 +69,7 @@ group :development, :test do
   # Use RSpec for testing
   gem "rspec-rails"
   gem "factory_bot_rails"
+  gem "letter_opener_web", "~> 3.0"
 end
 
 gem "stripe", "~> 21.0"
