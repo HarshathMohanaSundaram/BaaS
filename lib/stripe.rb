@@ -2,8 +2,8 @@ class Stripe
   class << self
     def create_account(organization)
       Stripe::Account.create(
-        type: 'custom',
-        country: 'us',
+        type: "custom",
+        country: "us",
         email: organization.email,
         business_type: organization.business_type,
         business_profile: { name: organization.name },
@@ -21,7 +21,7 @@ class Stripe
         account: organization.stripe_account_id,
         refresh_url: organization.refresh_url,
         return_url: organization.return_url,
-        type: 'account_onboarding'
+        type: "account_onboarding"
       )
     end
 
