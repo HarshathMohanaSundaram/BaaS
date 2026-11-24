@@ -1,0 +1,10 @@
+default: &default
+  publishable_key: 'pk_test'
+  secret_key: 'sk_test'
+  api_version: '2026-10-28.endive'
+
+development:
+  <<: *default
+
+test:
+  <<: *default

@@ -36,6 +36,6 @@
 
 # Ignore key files for decrypting credentials and more.
 /config/credentials/*.key
-/config/stripe.yml
+
 
 
