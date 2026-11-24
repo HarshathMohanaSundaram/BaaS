@@ -29,6 +29,8 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: baas
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     ports:
       - "3000:3000"
     depends_on:
